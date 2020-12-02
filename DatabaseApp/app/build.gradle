@@ -48,6 +48,5 @@ dependencies {
 
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile files('libs/libDaumMapAndroid.jar')
-    compile 'com.opencsv:opencsv:3.9'
     
 }

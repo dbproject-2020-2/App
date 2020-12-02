@@ -4,7 +4,9 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.graphics.Color;
 import android.location.LocationManager;
 import android.media.Image;
@@ -13,7 +15,12 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.util.Base64;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -50,7 +57,19 @@ import net.daum.mf.map.api.MapView;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 import static android.content.ContentValues.TAG;
 
@@ -63,19 +82,44 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     private ImageButton imageButton1, imageButton2, imageButton3, imageButton4;
     String[] REQUIRED_PERMISSIONS  = {Manifest.permission.ACCESS_FINE_LOCATION};
-    float latidude, longitude;
+    List<Double> cctvList1 = new ArrayList<>();
+    List<Double> cctvList2 = new ArrayList<>();
+    List<Double> conList1 = new ArrayList<>();
+    List<Double> conList2 = new ArrayList<>();
+    List<Double> polList1 = new ArrayList<>();
+    List<Double> polList2 = new ArrayList<>();
 
+    Double[] cctvArray1 = new Double[3704];
+    Double[] cctvArray2 = new Double[3704];
+    Double[] conArray1 = new Double[370];
+    Double[] conArray2 = new Double[370];
+    Double[] polArray1 = new Double[23];
+    Double[] polArray2 = new Double[23];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo("com.example.databaseapp", PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.e("KeyHash", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
 
         mMapView = (MapView) findViewById(R.id.map_view);
         //mMapView.setDaumMapApiKey(MapApiConst.DAUM_MAPS_ANDROID_APP_API_KEY);
         mMapView.setCurrentLocationEventListener(this);
 
+
+        //GPS 끄기 켜기
         if (!checkLocationServicesStatus()) {
 
             showDialogForLocationServiceSetting();
@@ -84,15 +128,117 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             checkRunTimePermission();
         }
 
+        try{
+            InputStream raw1 = getResources().openRawResource(R.raw.cctvlatitude);
+            BufferedReader bf1 = new BufferedReader(new InputStreamReader(raw1));
+
+            String line1;
+            while((line1 = bf1.readLine()) != null){
+                cctvList1.add((Double.parseDouble(line1)));
+            }
+            InputStream raw2 = getResources().openRawResource(R.raw.cctvlongitude);
+            BufferedReader bf2 = new BufferedReader(new InputStreamReader(raw2));
+            String line2;
+            while((line2 = bf2.readLine()) != null){
+                cctvList2.add((Double.parseDouble(line2)));
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        int cctvSize1 =0;
+       for(Double item1 : cctvList1) {
+            cctvArray1[cctvSize1++] = item1;
+        }
+        int cctvSize2 =0;
+        for(Double item2 : cctvList2) {
+            cctvArray2[cctvSize2++] = item2;
+        }
+
+
+        try{
+            InputStream raw3 = getResources().openRawResource(R.raw.conlatitude);
+            BufferedReader bf3 = new BufferedReader(new InputStreamReader(raw3));
+
+            String line3;
+            while((line3 = bf3.readLine()) != null){
+                conList1.add((Double.parseDouble(line3)));
+            }
+            InputStream raw4 = getResources().openRawResource(R.raw.conlongitude);
+            BufferedReader bf4 = new BufferedReader(new InputStreamReader(raw4));
+            String line4;
+            while((line4 = bf4.readLine()) != null){
+                conList2.add((Double.parseDouble(line4)));
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        int conSize1 =0;
+        for(Double conitem1 : conList1) {
+            conArray1[conSize1++] = conitem1;
+        }
+        int conSize2 =0;
+        for(Double conitem2 : conList2) {
+            conArray2[conSize2++] = conitem2;
+        }
+
+
+
+        try{
+            InputStream raw5 = getResources().openRawResource(R.raw.pollatitude);
+            BufferedReader bf5 = new BufferedReader(new InputStreamReader(raw5));
+
+            String line5;
+            while((line5 = bf5.readLine()) != null){
+                polList1.add((Double.parseDouble(line5)));
+            }
+            InputStream raw6 = getResources().openRawResource(R.raw.pollongitude);
+            BufferedReader bf6 = new BufferedReader(new InputStreamReader(raw6));
+            String line6;
+            while((line6 = bf6.readLine()) != null){
+                polList2.add((Double.parseDouble(line6)));
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        int polSize1 =0;
+        for(Double politem1 : polList1) {
+            polArray1[polSize1++] = politem1;
+        }
+        int polSize2 =0;
+        for(Double politem2 : polList2) {
+            polArray2[polSize2++] = politem2;
+        }
+
+
+
+
         imageButton1 = findViewById(R.id.imageButton1);
-        imageButton1.setOnClickListener(new View.OnClickListener() // 회원가입 버튼 클릭 시
-        {
-            @Override
-            public void onClick(View v)
+
+            imageButton1.setOnClickListener(new View.OnClickListener() // 회원가입 버튼 클릭 시
             {
 
-            }
-        });
+                @Override
+                public void onClick(View v) {
+
+                    try {
+                        for (int i = 0; i < 1500; i++) {
+                            MapPoint cctv = MapPoint.mapPointWithGeoCoord(cctvArray1[i], cctvArray2[i]);
+                            MapPOIItem cctvMarker = new MapPOIItem();
+                            cctvMarker.setItemName("CCTV"+ ", 위도: " +cctvArray1[i] + ", 경도: " +cctvArray2[i]);
+                            cctvMarker.setTag(i);
+                            cctvMarker.setMapPoint(cctv);
+                            cctvMarker.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
+                            cctvMarker.setCustomImageResourceId(R.drawable.cctv); //마커 모양
+                            cctvMarker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+                            mMapView.addPOIItem(cctvMarker);
+
+                        }
+                    } catch (Exception e) {
+                    }
+
+                }
+            });
+
 
         imageButton2 = findViewById(R.id.imageButton2);
         imageButton2.setOnClickListener(new View.OnClickListener() // 회원가입 버튼 클릭 시
@@ -100,7 +246,20 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             @Override
             public void onClick(View v)
             {
-
+                try {
+                    for (int i = 0; i < polArray1.length; i++) {
+                        MapPoint convenience = MapPoint.mapPointWithGeoCoord(polArray1[i], polArray2[i]);
+                        MapPOIItem polMarker = new MapPOIItem();
+                        polMarker.setItemName("경찰서"+ ", 위도: " +polArray1[i] + ", 경도: " +polArray2[i]);
+                        polMarker.setTag(i);
+                        polMarker.setMapPoint(convenience);
+                        polMarker.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
+                        polMarker.setCustomImageResourceId(R.drawable.policeoffice); //마커 모양
+                        polMarker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+                        mMapView.addPOIItem(polMarker);
+                    }
+                } catch (Exception e) {
+                }
             }
         });
 
@@ -110,6 +269,20 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             @Override
             public void onClick(View v)
             {
+                try {
+                    for (int i = 0; i < conArray1.length; i++) {
+                        MapPoint convenience = MapPoint.mapPointWithGeoCoord(conArray1[i], conArray2[i]);
+                        MapPOIItem conMarker = new MapPOIItem();
+                        conMarker.setItemName("편의점"+ ", 위도: " +conArray1[i] + ", 경도: " +conArray2[i]);
+                        conMarker.setTag(i);
+                        conMarker.setMapPoint(convenience);
+                        conMarker.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
+                        conMarker.setCustomImageResourceId(R.drawable.convenience); //마커 모양
+                        conMarker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+                        mMapView.addPOIItem(conMarker);
+                    }
+                } catch (Exception e) {
+                }
 
             }
         });
@@ -120,174 +293,60 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
             @Override
             public void onClick(View v)
             {
+                try {
+                    for (int i = 0; i < 9; i++) {
+                        for (int j = 0; j < 14; j++) {
+                            MapCircle circleGreen = new MapCircle(MapPoint.mapPointWithGeoCoord(37.319705322492554 - (0.008 * i), 126.94280673316653 + (0.009 * j)), 150, // radius
+                                    Color.argb(50, 0, 200, 0), // strokeColor
+                                    Color.argb(50, 0, 200, 0) // fillColor
+                            );
+                            circleGreen.setTag(0);
+                            mMapView.addCircle(circleGreen);
+
+
+                        }
+                    }
+                    for (int i = 0; i < 8; i++) {
+                        for (int j = 0; j < 14; j++) {
+                            MapCircle circleGreen = new MapCircle(MapPoint.mapPointWithGeoCoord(37.315705322492554 - (0.008 * i), 126.94480673316653 + (0.009* j)), 150, // radius
+                                    Color.argb(50, 0, 200, 0), // strokeColor
+                                    Color.argb(50, 0, 200, 0) // fillColor
+                            );
+                            circleGreen.setTag(0);
+                            mMapView.addCircle(circleGreen);
+
+
+                        }
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        for (int j = 0; j < 15; j++) {
+
+                            MapCircle circleYellow = new MapCircle(MapPoint.mapPointWithGeoCoord(37.320205322492554 - (0.008 * i), 126.93830673316653 + (0.009 * j)), 150, // radius
+                                    Color.argb(50, 200, 200, 0), // strokeColor
+                                    Color.argb(50, 200, 200, 0) // fillColor
+                            );
+                            circleYellow.setTag(0);
+                            mMapView.addCircle(circleYellow);
+                        }
+                    }
+
+                    for (int i = 0; i < 10; i++) {
+                        for (int j = 0; j < 15; j++) {
+
+                            MapCircle circleRed = new MapCircle(MapPoint.mapPointWithGeoCoord(37.317205322492554 - (0.008 * i), 126.94130673316653 + (0.009 * j)), 150, // radius
+                                    Color.argb(50, 200, 0, 0), // strokeColor
+                                    Color.argb(50, 200, 0, 0) // fillColor
+                            );
+                            circleRed.setTag(0);
+                            mMapView.addCircle(circleRed);
+                        }
+                    }
+                }
+                catch (Exception e) {
+                }
 
             }
         });
-
-
-        MapPoint mylocate = MapPoint.mapPointWithGeoCoord(37.27572276644065, 127.04401066266085);
-        MapPoint cctv1 = MapPoint.mapPointWithGeoCoord(37.274662612838625, 127.04370399486666);
-        MapPoint cctv2 = MapPoint.mapPointWithGeoCoord(37.278338398960194, 127.04310618561408);
-        MapPoint cctv3 = MapPoint.mapPointWithGeoCoord(37.27638009705588, 127.04348671211531);
-        MapPoint cctv4 = MapPoint.mapPointWithGeoCoord(37.2752640518535, 127.04198796468304);
-        MapPoint cctv5 = MapPoint.mapPointWithGeoCoord(37.27413590270301, 127.04562343987345);
-        MapPoint cctv6 = MapPoint.mapPointWithGeoCoord(37.27365643419459, 127.04339050873282);
-        MapPoint cctv7 = MapPoint.mapPointWithGeoCoord(37.276835374282, 127.04392722234033);
-        MapPoint convenience1 = MapPoint.mapPointWithGeoCoord(37.274881876753064, 127.04411622320126);
-        MapPoint convenience2 = MapPoint.mapPointWithGeoCoord(37.27413934994582, 127.04501794931391);
-        MapPoint convenience3 = MapPoint.mapPointWithGeoCoord(37.27581127538482, 127.04370097109954);
-        MapPoint convenience4 = MapPoint.mapPointWithGeoCoord(37.274508210913915, 127.04262659415325);
-        MapPoint convenience5 = MapPoint.mapPointWithGeoCoord(37.27590779776539, 127.04466271176611);
-        MapPoint convenience6 = MapPoint.mapPointWithGeoCoord(37.27497014639692, 127.04577607820546);
-        MapPoint rating1 = MapPoint.mapPointWithGeoCoord(37.27497014639692, 127.04577607820546);
-
-        MapPOIItem marker = new MapPOIItem();
-        marker.setItemName("현재위치");
-        marker.setTag(0);
-        marker.setMapPoint(mylocate);
-        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);// 커스텀마커 설정
-        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker);
-
-        MapPOIItem cctvMarker1 = new MapPOIItem();
-        cctvMarker1.setItemName("CCTV");
-        cctvMarker1.setTag(0);
-        cctvMarker1.setMapPoint(cctv1);
-        cctvMarker1.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        cctvMarker1.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        cctvMarker1.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(cctvMarker1);
-
-        MapPOIItem cctvMarker2 = new MapPOIItem();
-        cctvMarker2.setItemName("CCTV");
-        cctvMarker2.setTag(0);
-        cctvMarker2.setMapPoint(cctv2);
-        cctvMarker2.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        cctvMarker2.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        cctvMarker2.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(cctvMarker2);
-
-        MapPOIItem marker3 = new MapPOIItem();
-        marker3.setItemName("CCTV");
-        marker3.setTag(0);
-        marker3.setMapPoint(cctv3);
-        marker3.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        marker3.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        marker3.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker3);
-
-        MapPOIItem marker4 = new MapPOIItem();
-        marker4.setItemName("CCTV");
-        marker4.setTag(0);
-        marker4.setMapPoint(cctv4);
-        marker4.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        marker4.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        marker4.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker4);
-
-        MapPOIItem marker5 = new MapPOIItem();
-        marker5.setItemName("CCTV");
-        marker5.setTag(0);
-        marker5.setMapPoint(cctv5);
-        marker5.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        marker5.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        marker5.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker5);
-
-        MapPOIItem marker6 = new MapPOIItem();
-        marker6.setItemName("CCTV");
-        marker6.setTag(0);
-        marker6.setMapPoint(cctv6);
-        marker6.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        marker6.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        marker6.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker6);
-
-        MapPOIItem marker7 = new MapPOIItem();
-        marker7.setItemName("CCTV");
-        marker7.setTag(0);
-        marker7.setMapPoint(cctv7);
-        marker7.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        marker7.setCustomImageResourceId(R.drawable.cctv); //마커 모양
-        marker7.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(marker7);
-
-        MapPOIItem conMarker1 = new MapPOIItem();
-        conMarker1.setItemName("편의점");
-        conMarker1.setTag(0);
-        conMarker1.setMapPoint(convenience1);
-        conMarker1.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker1.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker1.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker1);
-
-        MapPOIItem conMarker2 = new MapPOIItem();
-        conMarker2.setItemName("편의점");
-        conMarker2.setTag(0);
-        conMarker2.setMapPoint(convenience2);
-        conMarker2.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker2.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker2.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker2);
-
-        MapPOIItem conMarker3 = new MapPOIItem();
-        conMarker3.setItemName("편의점");
-        conMarker3.setTag(0);
-        conMarker3.setMapPoint(convenience3);
-        conMarker3.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker3.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker3.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker3);
-
-        MapPOIItem conMarker4 = new MapPOIItem();
-        conMarker4.setItemName("편의점");
-        conMarker4.setTag(0);
-        conMarker4.setMapPoint(convenience4);
-        conMarker4.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker4.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker4.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker1);
-
-        MapPOIItem conMarker5 = new MapPOIItem();
-        conMarker5.setItemName("편의점");
-        conMarker5.setTag(0);
-        conMarker5.setMapPoint(convenience5);
-        conMarker5.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker5.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker5.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker5);
-
-        MapPOIItem conMarker6 = new MapPOIItem();
-        conMarker6.setItemName("편의점");
-        conMarker6.setTag(0);
-        conMarker6.setMapPoint(convenience6);
-        conMarker6.setMarkerType(MapPOIItem.MarkerType.CustomImage);// 커스텀마커 설정
-        conMarker6.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        conMarker6.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker6);
-
-        MapPOIItem ratingMarker6 = new MapPOIItem();
-        ratingMarker6.setItemName("안전");
-        ratingMarker6.setTag(0);
-        ratingMarker6.setMapPoint(convenience6);// 커스텀마커 설정
-        ratingMarker6.setCustomImageResourceId(R.drawable.convenience); //마커 모양
-        ratingMarker6.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin);// 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mMapView.addPOIItem(conMarker6);
-
-        MapCircle circle1 = new MapCircle(MapPoint.mapPointWithGeoCoord(37.274662612838625, 127.04370399486666), 250, // radius
-                Color.argb(100, 200, 0, 0), // strokeColor
-                Color.argb(100, 0, 200, 0) // fillColor
-        );
-        circle1.setTag(0);
-        mMapView.addCircle(circle1);
-
-        MapCircle circle2 = new MapCircle(MapPoint.mapPointWithGeoCoord(37.27581127538482, 127.04370097109954), 250, // radius
-                Color.argb(100, 200, 0, 0), // strokeColor
-                Color.argb(100, 200, 200, 0) // fillColor
-        );
-        circle2.setTag(0);
-        mMapView.addCircle(circle2);
-
 
 
 
@@ -459,7 +518,29 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                 || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.option, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        switch (id) {
+            case R.id.item1:
+                mMapView.removeAllPOIItems();
+                mMapView.removeAllCircles();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 }
+
+
 
 
 
